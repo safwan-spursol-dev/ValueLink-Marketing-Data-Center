@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['name'] = $user['name'];
+        $_SESSION['image'] = !empty($user['image']) ? $user['image'] : 'default.jpg';
         header("Location: ../index.php");
         exit;
     } else {
