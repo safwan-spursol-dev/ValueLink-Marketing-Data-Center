@@ -245,21 +245,29 @@
                         <?php endif; ?>
 
                         <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'marketing' || $_SESSION['role'] === 'admin')): ?>
-                        <li class="menu-title"><i class="ri-more-fill"></i> <span>Marketing</span></li>
+                        
                         <li class="nav-item">
-                            <a class="nav-link menu-link" href="leads-add.php">
-                                <i class="ri-user-add-line"></i> <span>Add Leads</span>
+                            <a class="nav-link menu-link" href="leads-list.php">
+                                <i class="ri-user-add-line"></i> <span> Leads</span>
                             </a>
                         </li>
                         <?php endif; ?>
 
-                        <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'sales' || $_SESSION['role'] === 'admin')): ?>
+                        <?php if (isset($_SESSION['role']) && ($_SESSION['role'] === 'sales')): ?>
                         <li class="menu-title"><i class="ri-more-fill"></i> <span>Sales</span></li>
                         <li class="nav-item">
                             <a class="nav-link menu-link" href="leads-list.php">
                                 <i class="ri-team-line"></i> <span>View Leads</span>
                             </a>
                         </li>
+                        <?php endif; ?>
+
+                        <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
+                            <li class="nav-item">
+                                <a class="nav-link menu-link" href="logs.php">
+                                    <i class="ri-history-line"></i> <span>Activity Logs</span>
+                                </a>
+                            </li>
                         <?php endif; ?>
 
                         <li class="nav-item">
