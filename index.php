@@ -5,19 +5,32 @@ require_once 'includes/session_check.php';
 $role = $_SESSION['role'];
 
 // =========================================================
-// 1. DATE FILTER LOGIC
+// 1. DATE FILTER LOGIC (DYNAMIC: OLDEST TO TODAY)
 // =========================================================
-$default_start = date('Y-m-01');
-$default_end = date('Y-m-d');
 
-if (isset($_GET['date_range']) && !empty($_GET['date_range'])) {
-    $dates = explode(' to ', $_GET['date_range']);
-    $start_date = $dates[0];
-    $end_date = isset($dates[1]) ? $dates[1] : $dates[0]; 
-} else {
-    $start_date = $default_start;
-    $end_date = $default_end;
-}
+    // Step A: Database se sabse purani date nikalo
+    $minDateStmt = $pdo->query("SELECT MIN(created_at) FROM leads");
+    $oldest_record = $minDateStmt->fetchColumn();
+
+    // Step B: Agar data hai to wo date lo, warna current month ki 1st date (Fallback)
+    if ($oldest_record) {
+        $default_start = date('Y-m-d', strtotime($oldest_record));
+    } else {
+        $default_start = date('Y-m-01'); // Fallback for empty DB
+    }
+
+    $default_end = date('Y-m-d'); // Aaj ki date
+
+    // Step C: Check karo agar user ne khud filter lagaya hai
+    if (isset($_GET['date_range']) && !empty($_GET['date_range'])) {
+        $dates = explode(' to ', $_GET['date_range']);
+        $start_date = $dates[0];
+        $end_date = isset($dates[1]) ? $dates[1] : $dates[0]; 
+    } else {
+        // Agar user ne filter nahi chera, to Hamari Dynamic Range use karo
+        $start_date = $default_start;
+        $end_date = $default_end;
+    }
 
 // =========================================================
 // 2. HELPER FUNCTIONS
@@ -94,7 +107,7 @@ if ($role === 'admin') {
     $trendStmt = $pdo->prepare("SELECT DATE(created_at) as date, COUNT(*) as count FROM leads WHERE DATE(created_at) BETWEEN ? AND ? GROUP BY DATE(created_at) ORDER BY date ASC");
     $trendStmt->execute([$start_date, $end_date]);
     $trendData = $trendStmt->fetchAll(PDO::FETCH_ASSOC);
-    foreach($trendData as $t) { $trendDates[] = date('d M', strtotime($t['date'])); $trendCounts[] = $t['count']; }
+    foreach($trendData as $t) { $trendDates[] = date('d M, Y ', strtotime($t['date'])); $trendCounts[] = $t['count']; }
 
     $recentLogs = $pdo->query("SELECT l.description, l.created_at, u.name as user_name FROM activity_logs l LEFT JOIN users u ON l.user_id = u.id ORDER BY l.created_at DESC LIMIT 6")->fetchAll(PDO::FETCH_ASSOC);
     $recentLeads = $pdo->query("SELECT id, client_name, company, status, source, created_at FROM leads ORDER BY created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
@@ -106,7 +119,7 @@ if ($role === 'marketing') {
     $trendStmt = $pdo->prepare("SELECT DATE(created_at) as date, COUNT(*) as count FROM leads WHERE DATE(created_at) BETWEEN ? AND ? GROUP BY DATE(created_at) ORDER BY date ASC");
     $trendStmt->execute([$start_date, $end_date]);
     $trendData = $trendStmt->fetchAll(PDO::FETCH_ASSOC);
-    foreach($trendData as $t) { $trendDates[] = date('d M', strtotime($t['date'])); $trendCounts[] = $t['count']; }
+    foreach($trendData as $t) { $trendDates[] = date('d M, Y', strtotime($t['date'])); $trendCounts[] = $t['count']; }
 
     $recentLeads = $pdo->query("SELECT id, client_name, company, status, form_name, created_at FROM leads ORDER BY created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
     
@@ -124,7 +137,7 @@ if ($role === 'sales') {
     $trendStmt = $pdo->prepare("SELECT DATE(created_at) as date, COUNT(*) as count FROM leads WHERE status = 'converted' AND DATE(created_at) BETWEEN ? AND ? GROUP BY DATE(created_at) ORDER BY date ASC");
     $trendStmt->execute([$start_date, $end_date]);
     $trendData = $trendStmt->fetchAll(PDO::FETCH_ASSOC);
-    foreach($trendData as $t) { $trendDates[] = date('d M', strtotime($t['date'])); $trendCounts[] = $t['count']; }
+    foreach($trendData as $t) { $trendDates[] = date('d M, Y', strtotime($t['date'])); $trendCounts[] = $t['count']; }
 }
 
 require_once 'includes/header.php';
