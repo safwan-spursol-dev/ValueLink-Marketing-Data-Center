@@ -10,7 +10,7 @@ $dbname = 'vmdc';
 $username = 'root';
 $password = ''; 
 
-define('BASE_URL', 'http://localhost/ValueLink-Marketing-Data-Center-main/ValueLink-Marketing-Data-Center-main/');
+define('BASE_URL', 'http://localhost/ValueLink-Marketing-Data-Center/');
 try {
     // Create PDO instance with secure options
     $pdo = new PDO(

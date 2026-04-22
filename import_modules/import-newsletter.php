@@ -1,10 +1,8 @@
 <?php
-// import-newsletter.php
 require_once '../config/db.php'; 
 require_once '../includes/session_check.php';
 
-$message = "";
-$msgType = "";
+$message = ""; $msgType = "";
 $form_name = "Newsletter Subscription Form";
 $headerRowIndex = 0;
 
@@ -13,7 +11,13 @@ if (isset($_POST['import_btn'])) {
         $name = $_FILES['csv_file']['name'];
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
         
-        if ($ext === 'csv') {
+        // ✨ NAYA CHECK
+        $filename_lower = strtolower($name);
+        if (strpos($filename_lower, 'newsletter') === false) {
+            $message = "Error: Your file <b>'$name'</b> is not matched with $form_name.";
+            $msgType = "danger";
+        }
+        elseif ($ext === 'csv') {
             $fileRows = [];
             if (($handle = fopen($_FILES['csv_file']['tmp_name'], "r")) !== FALSE) {
                 while (($data = fgetcsv($handle)) !== FALSE) { $fileRows[] = $data; }
@@ -24,12 +28,8 @@ if (isset($_POST['import_btn'])) {
                 $map = ['email'=>-1, 'date'=>-1];
 
                 if (isset($fileRows[$headerRowIndex])) {
-                    $headers = $fileRows[$headerRowIndex];
-                    foreach ($headers as $index => $colName) {
-                        $clean_raw = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $colName); 
-                        $col = strtolower(trim($clean_raw));
-
-                        // ✨ Newsletter Mapping ✨
+                    foreach ($fileRows[$headerRowIndex] as $index => $colName) {
+                        $col = strtolower(trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $colName)));
                         if (strpos($col, 'email') !== false) $map['email'] = $index;
                         elseif (strpos($col, 'date') !== false) $map['date'] = $index;
                     }
@@ -40,7 +40,7 @@ if (isset($_POST['import_btn'])) {
                     $data = $fileRows[$i];
                     if (empty(implode('', $data))) continue;
 
-                    $client_name = 'Imported User'; // Default for Newsletter
+                    $client_name = 'Imported User'; 
                     $email = ($map['email'] > -1 && isset($data[$map['email']])) ? trim($data[$map['email']]) : '';
                     
                     $date_raw = ($map['date'] > -1 && isset($data[$map['date']])) ? trim($data[$map['date']]) : '';
@@ -61,14 +61,13 @@ if (isset($_POST['import_btn'])) {
                 $message = "Success! Form: <b>$form_name</b>. Imported <b>$count</b> leads.";
                 $msgType = "success";
             }
-        }
+        } else { $message = "Invalid format."; $msgType = "danger"; }
     }
 }
 require_once '../includes/header.php';
 ?>
-
 <div class="main-content"><div class="page-content"><div class="container-fluid"><div class="row justify-content-center"><div class="col-md-6">
-    <div class="d-flex align-items-center justify-content-between mb-4"><h4 class="mb-0">Import: <?php echo $form_name; ?></h4><a href="leads-list.php" class="btn btn-light btn-sm">Back</a></div>
+    <div class="d-flex align-items-center justify-content-between mb-4"><h4 class="mb-0">Import: <?php echo $form_name; ?></h4><a href="<?php echo BASE_URL; ?>leads-list.php" class="btn btn-light btn-sm">Back</a></div>
     <?php if (!empty($message)): ?><div class="alert alert-<?php echo $msgType; ?> alert-dismissible"><?php echo $message; ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
     <div class="card shadow-sm"><div class="card-body">
         <form method="POST" enctype="multipart/form-data" id="importForm">

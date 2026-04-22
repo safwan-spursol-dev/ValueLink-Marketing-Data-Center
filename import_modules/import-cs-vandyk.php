@@ -13,7 +13,15 @@ if (isset($_POST['import_btn'])) {
         $name = $_FILES['csv_file']['name'];
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
         
-        if ($ext === 'csv') {
+        // ✨ NAYA CHECK: File Name Validation (Super Fast) ✨
+        $filename_lower = strtolower($name);
+        
+        // Check kar rahay hain ke file ke naam mein 'vandyk' mojood hai ya nahi
+        if (strpos($filename_lower, 'vandyk') === false) {
+            $message = "Error: Your file <b>'$name'</b> is not matched with $form_name.";
+            $msgType = "danger";
+        }
+        elseif ($ext === 'csv') {
             $fileRows = [];
             if (($handle = fopen($_FILES['csv_file']['tmp_name'], "r")) !== FALSE) {
                 while (($data = fgetcsv($handle)) !== FALSE) { $fileRows[] = $data; }
@@ -21,7 +29,6 @@ if (isset($_POST['import_btn'])) {
             }
 
             if (count($fileRows) > 0) {
-                // ✨ Job Title field added to map
                 $map = ['name'=>-1, 'email'=>-1, 'job_title'=>-1, 'company'=>-1, 'phone'=>-1, 'date'=>-1];
 
                 if (isset($fileRows[$headerRowIndex])) {
@@ -32,7 +39,6 @@ if (isset($_POST['import_btn'])) {
 
                         if (strpos($col, 'name') !== false) $map['name'] = $index;
                         elseif (strpos($col, 'email') !== false) $map['email'] = $index;
-                        // ✨ Map directly to job_title
                         elseif (strpos($col, 'job title') !== false || strpos($col, 'title') !== false) $map['job_title'] = $index; 
                         elseif (strpos($col, 'company') !== false) $map['company'] = $index;
                         elseif (strpos($col, 'phone') !== false) $map['phone'] = $index;
@@ -60,7 +66,6 @@ if (isset($_POST['import_btn'])) {
                     }
 
                     try {
-                        // ✨ INSERT query updated with job_title
                         $sql = "INSERT INTO leads (client_name, email, job_title, company, phone, form_name, source, status, created_at) VALUES (?, ?, ?, ?, ?, ?, 'CSV Import', 'new', ?)";
                         $stmt = $pdo->prepare($sql);
                         $stmt->execute([$client_name, $email, $job_title, $company, $phone, $form_name, $created_at]);
@@ -70,14 +75,20 @@ if (isset($_POST['import_btn'])) {
                 $message = "Success! Form: <b>$form_name</b>. Imported <b>$count</b> leads.";
                 $msgType = "success";
             }
+        } else {
+            $message = "Invalid file format. Please upload a CSV file.";
+            $msgType = "danger";
         }
+    } else {
+        $message = "Error uploading file.";
+        $msgType = "danger";
     }
 }
 require_once '../includes/header.php';
 ?>
 
 <div class="main-content"><div class="page-content"><div class="container-fluid"><div class="row justify-content-center"><div class="col-md-6">
-    <div class="d-flex align-items-center justify-content-between mb-4"><h4 class="mb-0">Import: <?php echo $form_name; ?></h4><a href="leads-list.php" class="btn btn-light btn-sm">Back</a></div>
+    <div class="d-flex align-items-center justify-content-between mb-4"><h4 class="mb-0">Import: <?php echo $form_name; ?></h4><a href="<?php echo BASE_URL; ?>leads-list.php" class="btn btn-light btn-sm">Back</a></div>
     <?php if (!empty($message)): ?><div class="alert alert-<?php echo $msgType; ?> alert-dismissible"><?php echo $message; ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
     <div class="card shadow-sm"><div class="card-body">
         <form method="POST" enctype="multipart/form-data" id="importForm">

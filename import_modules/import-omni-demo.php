@@ -1,10 +1,8 @@
 <?php
-// import-omni-demo.php
 require_once '../config/db.php'; 
 require_once '../includes/session_check.php';
 
-$message = "";
-$msgType = "";
+$message = ""; $msgType = "";
 $form_name = "Omni Demo Request Form";
 $headerRowIndex = 0;
 
@@ -13,7 +11,13 @@ if (isset($_POST['import_btn'])) {
         $name = $_FILES['csv_file']['name'];
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
         
-        if ($ext === 'csv') {
+        // ✨ NAYA CHECK
+        $filename_lower = strtolower($name);
+        if (strpos($filename_lower, 'omni') === false) {
+            $message = "Error: Your file <b>'$name'</b> is not matched with $form_name.";
+            $msgType = "danger";
+        }
+        elseif ($ext === 'csv') {
             $fileRows = [];
             if (($handle = fopen($_FILES['csv_file']['tmp_name'], "r")) !== FALSE) {
                 while (($data = fgetcsv($handle)) !== FALSE) { $fileRows[] = $data; }
@@ -24,11 +28,8 @@ if (isset($_POST['import_btn'])) {
                 $map = ['name'=>-1, 'company'=>-1, 'email'=>-1, 'phone'=>-1, 'user_role'=>-1, 'order_volume'=>-1, 'message'=>-1, 'preferred_date'=>-1, 'date'=>-1];
 
                 if (isset($fileRows[$headerRowIndex])) {
-                    $headers = $fileRows[$headerRowIndex];
-                    foreach ($headers as $index => $colName) {
-                        $clean_raw = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $colName); 
-                        $col = strtolower(trim($clean_raw));
-
+                    foreach ($fileRows[$headerRowIndex] as $index => $colName) {
+                        $col = strtolower(trim(preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $colName)));
                         if (strpos($col, 'name') !== false) $map['name'] = $index;
                         elseif (strpos($col, 'company') !== false) $map['company'] = $index;
                         elseif (strpos($col, 'email') !== false) $map['email'] = $index;
@@ -81,14 +82,13 @@ if (isset($_POST['import_btn'])) {
                 $message = "Success! Form: <b>$form_name</b>. Imported <b>$count</b> leads.";
                 $msgType = "success";
             }
-        }
+        } else { $message = "Invalid format."; $msgType = "danger"; }
     }
 }
 require_once '../includes/header.php';
 ?>
-
 <div class="main-content"><div class="page-content"><div class="container-fluid"><div class="row justify-content-center"><div class="col-md-6">
-    <div class="d-flex align-items-center justify-content-between mb-4"><h4 class="mb-0">Import: <?php echo $form_name; ?></h4><a href="leads-list.php" class="btn btn-light btn-sm">Back</a></div>
+    <div class="d-flex align-items-center justify-content-between mb-4"><h4 class="mb-0">Import: <?php echo $form_name; ?></h4><a href="<?php echo BASE_URL; ?>leads-list.php" class="btn btn-light btn-sm">Back</a></div>
     <?php if (!empty($message)): ?><div class="alert alert-<?php echo $msgType; ?> alert-dismissible"><?php echo $message; ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div><?php endif; ?>
     <div class="card shadow-sm"><div class="card-body">
         <form method="POST" enctype="multipart/form-data" id="importForm">
